@@ -5,7 +5,12 @@ import { useEffect, useRef } from 'react';
 // flight, and clears the timer on unmount (or when `active` goes false), so
 // an active menu/order view stops updating the moment the diner leaves it.
 // History views never poll — they simply do not call this hook.
-export default function usePolling(fn, intervalMs, active = true) {
+//
+// An optional `reloadKey` reloads once when its value changes (for example
+// the selected All/Current/Past filter): the effect re-runs, the immediate
+// tick picks up the new callback through the ref, and the interval restarts
+// without the stale view's timer surviving.
+export default function usePolling(fn, intervalMs, active = true, reloadKey) {
   const fnRef = useRef(fn);
   fnRef.current = fn;
 
@@ -24,5 +29,5 @@ export default function usePolling(fn, intervalMs, active = true) {
     tick();
     const timer = setInterval(tick, intervalMs);
     return () => clearInterval(timer);
-  }, [intervalMs, active]);
+  }, [intervalMs, active, reloadKey]);
 }
