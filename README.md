@@ -2,7 +2,7 @@
 
 Frontend repository: [devops-assignment-FE](https://github.com/ArellaKoo/devops-assignment-FE). Backend: [devops-assignment-BE](https://github.com/ArellaKoo/devops-assignment-BE).
 
-This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. **The current screen is a SkipQ landing page; diner/vendor sign-in and ordering flows are later plan tasks, not implemented yet.**
+This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. The shared architecture has landed: seeded-account sign-in at `/login`, the protected diner and vendor persona areas (routes in `src/App.js`), the shared API client, per-tab token state, shared refusal feedback, and the shared request-in-flight control. The full diner ordering flow, vendor trading/fulfillment screens and the US10 order views are later plan tasks; their screens are currently live stubs over the existing API.
 
 ## Install and configure
 
@@ -15,7 +15,9 @@ npm ci
 cp .env.example .env
 ```
 
-If Node 22.17.0 is already installed, skip `nvm install`. `.env` configures `REACT_APP_API_BASE_URL`, host and port. The unused lab proxy is removed; the future API client uses the configured backend URL with backend CORS. `src/config.js` and the shared API client will be added with the frontend architecture task; no current page makes an API request.
+If Node 22.17.0 is already installed, skip `nvm install`. `.env` configures `REACT_APP_API_BASE_URL` (documented local value `http://127.0.0.1:5001`, read by `src/config.js`), host and port. The unused lab proxy is removed; every request goes through the shared API client (`src/api/client.js`), which attaches the Bearer token, parses the backend's `{"error": {"code", "message"}}` refusals and surfaces `401 authentication_required` so the session returns to sign-in. Cross-origin access is allowed by the backend's CORS configuration, not by a frontend proxy.
+
+Shared modules: `src/config.js` (API base URL), `src/api/client.js` (fetch wrapper + `ApiError`), `src/auth/AuthContext.jsx` (per-tab `sessionStorage` token state, login/logout), `src/auth/RequireRole.jsx` (route gate; the backend's 401/403 checks remain authoritative), `src/context/FeedbackContext.jsx` + `src/components/FeedbackBanner.jsx` (actionable refusal display), `src/components/AsyncButton.jsx` (request-in-flight disabled/progress control), and the two persona layouts in `src/layouts/`. The route table and the five-decision rationale are in the backend repository's `docs/report/frontend-architecture.md`.
 
 ## Run and build
 

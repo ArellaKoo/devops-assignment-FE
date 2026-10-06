@@ -1,10 +1,17 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { AuthProvider } from './auth/AuthContext';
+import { FeedbackProvider } from './context/FeedbackContext';
 import App from './App';
-const root = ReactDOM.createRoot(document.getElementById('root'));
+import './index.css';
+
+const root = createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <StrictMode>
+    <AuthProvider>
+      <FeedbackProvider>
+        <App />
+      </FeedbackProvider>
+    </AuthProvider>
+  </StrictMode>,
 );
