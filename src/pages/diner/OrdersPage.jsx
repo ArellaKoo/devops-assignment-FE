@@ -1,38 +1,51 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
+import usePolling from '../../hooks/usePolling';
+import useTransitionError from '../../hooks/useTransitionError';
 import { formatCents, formatDateTime } from '../../format';
 
-// Stub of the order list (Task 10 adds the All/Current/Past views).
+// The diner's order list. Active view: polls every 3 s (cleared on unmount)
+// so vendor moves show up, plus an explicit Refresh. The All/Current/Past
+// filter lands with Task 10 (UI Past maps to view=history).
 export default function DinerOrdersPage() {
   const { request } = useAuth();
   const { show } = useFeedback();
   const [orders, setOrders] = useState(null);
+  const errors = useTransitionError(show);
 
-  useEffect(() => {
-    let active = true;
-    request('/api/diner/orders?view=all')
-      .then((data) => active && setOrders(data.items))
-      .catch((error) => {
-        if (active) {
-          setOrders(null);
-          show(error.message);
-        }
-      });
-    return () => {
-      active = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const load = useCallback(async () => {
+    try {
+      const data = await request('/api/diner/orders?view=all');
+      setOrders(data.items);
+      errors.markOk();
+    } catch (error) {
+      setOrders(null);
+      errors.markError(error.message);
+    }
+  }, [request, errors]);
+
+  usePolling(load, 3000);
 
   return (
     <section>
-      <h2>My orders</h2>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2 className="mb-0">My orders</h2>
+        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={load}>
+          Refresh
+        </button>
+      </div>
+
       {orders === null ? (
         <p className="text-secondary">Loading your orders…</p>
       ) : orders.length === 0 ? (
-        <p className="text-secondary">You have no orders yet.</p>
+        <div className="text-secondary">
+          <p>You have no orders yet.</p>
+          <Link className="btn btn-primary" to="/diner/stalls">
+            Browse open stalls
+          </Link>
+        </div>
       ) : (
         <ul className="list-group">
           {orders.map((order) => (

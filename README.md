@@ -2,7 +2,7 @@
 
 Frontend repository: [devops-assignment-FE](https://github.com/ArellaKoo/devops-assignment-FE). Backend: [devops-assignment-BE](https://github.com/ArellaKoo/devops-assignment-BE).
 
-This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. The shared architecture has landed: seeded-account sign-in at `/login`, the protected diner and vendor persona areas (routes in `src/App.js`), the shared API client, per-tab token state, shared refusal feedback, and the shared request-in-flight control. The full diner ordering flow, vendor trading/fulfillment screens and the US10 order views are later plan tasks; their screens are currently live stubs over the existing API.
+This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. The shared architecture has landed: seeded-account sign-in at `/login`, the protected diner and vendor persona areas (routes in `src/App.js`), the shared API client, per-tab token state, shared refusal feedback, and the shared request-in-flight control. The diner ordering flow (stalls → menu → cart → checkout → tracking) is complete; the vendor trading/fulfillment screens and the US10 order-list filters are later plan tasks (the vendor screens are currently live stubs over the existing API).
 
 ## Install and configure
 
