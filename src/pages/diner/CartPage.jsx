@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import useTransitionError from '../../hooks/useTransitionError';
+import { useAsyncAction } from '../../components/AsyncButton';
 import { formatCents } from '../../format';
 
 // Cart review. The server computes the total and the checkout freshness
@@ -33,38 +34,24 @@ export default function DinerCartPage() {
     loadRef.current();
   }, []);
 
-  const setQuantity = useCallback(
-    async (line, quantity) => {
+  const changeCartAction = useCallback(
+    async (line, options) => {
       try {
-        const data = await request(`/api/diner/cart/items/${line.item_id}`, {
-          method: 'PATCH',
-          body: { quantity },
-        });
+        const data = await request(`/api/diner/cart/items/${line.item_id}`, options);
         setCart(data.cart);
         errors.markOk();
       } catch (error) {
         show(error.message);
         // The record changed underneath us (e.g. the item sold out): reload
         // the server's state instead of trusting the local lines.
-        load();
+        await load();
       }
     },
     [request, show, load, errors],
   );
-
-  const removeLine = useCallback(
-    async (line) => {
-      try {
-        const data = await request(`/api/diner/cart/items/${line.item_id}`, { method: 'DELETE' });
-        setCart(data.cart);
-        errors.markOk();
-      } catch (error) {
-        show(error.message);
-        load();
-      }
-    },
-    [request, show, load, errors],
-  );
+  const { busy: cartBusy, run: changeCart } = useAsyncAction(changeCartAction);
+  const setQuantity = (line, quantity) => changeCart(line, { method: 'PATCH', body: { quantity } });
+  const removeLine = (line) => changeCart(line, { method: 'DELETE' });
 
   if (cart === null) {
     return (
@@ -106,6 +93,7 @@ export default function DinerCartPage() {
                       <button
                         type="button"
                         className="btn btn-outline-primary btn-sm"
+                        disabled={cartBusy}
                         onClick={() => setQuantity(line, line.quantity - 1)}
                         aria-label={`Decrease quantity of ${line.name}`}
                       >
@@ -115,6 +103,7 @@ export default function DinerCartPage() {
                       <button
                         type="button"
                         className="btn btn-outline-primary btn-sm"
+                        disabled={cartBusy}
                         onClick={() => setQuantity(line, line.quantity + 1)}
                         aria-label={`Increase quantity of ${line.name}`}
                       >
@@ -127,6 +116,7 @@ export default function DinerCartPage() {
                     <button
                       type="button"
                       className="btn btn-outline-danger btn-sm"
+                      disabled={cartBusy}
                       onClick={() => removeLine(line)}
                       aria-label={`Remove ${line.name} from the cart`}
                     >

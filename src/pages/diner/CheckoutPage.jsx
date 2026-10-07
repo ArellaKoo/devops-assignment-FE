@@ -206,6 +206,11 @@ export default function DinerCheckoutPage() {
           {lastFailure.message}
         </div>
       )}
+      {lastFailure && !['payment_failed', 'checkout_key_conflict'].includes(lastFailure.code) && (
+        <div className="alert alert-danger" role="alert">
+          {lastFailure.message} Retry this payment attempt once the service is available.
+        </div>
+      )}
 
       <div className="card">
         <div className="card-body">

@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
+import { useAsyncAction } from '../../components/AsyncButton';
 import { formatCents } from '../../format';
 
 // One stall's published menu, active while the diner is on it:
@@ -74,7 +75,7 @@ export default function DinerMenuPage() {
     [cart],
   );
 
-  const addItem = useCallback(
+  const addItemAction = useCallback(
     async (item) => {
       try {
         const data = await request('/api/diner/cart/items', {
@@ -95,6 +96,7 @@ export default function DinerMenuPage() {
     },
     [request, show, quantityFor, loadMenu, loadCart, cartErrors],
   );
+  const { busy: cartBusy, run: addItem } = useAsyncAction(addItemAction);
 
   if (notFound) {
     return (
@@ -140,7 +142,7 @@ export default function DinerMenuPage() {
         <ul className="list-group">
           {items.map((item) => {
             const quantity = quantityFor(item.id);
-            const disabled = !item.is_available || !stall.is_open;
+            const disabled = cartBusy || !item.is_available || !stall.is_open;
             return (
               <li key={item.id} className={`list-group-item ${item.is_available ? '' : 'text-secondary'}`}>
                 <div className="d-flex gap-3">
