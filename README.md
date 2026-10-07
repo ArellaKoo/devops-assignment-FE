@@ -2,11 +2,11 @@
 
 Frontend repository: [devops-assignment-FE](https://github.com/ArellaKoo/devops-assignment-FE). Backend: [devops-assignment-BE](https://github.com/ArellaKoo/devops-assignment-BE).
 
-This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. The shared architecture has landed: seeded-account sign-in at `/login`, the protected diner and vendor persona areas (routes in `src/App.js`), the shared API client, per-tab token state, shared refusal feedback, and the shared request-in-flight control. The diner ordering flow (stalls → menu → cart → checkout → tracking) and the vendor trading/fulfillment screens (own menu with open/close and item add/edit/remove, plus the paid order queue and the server-permitted lifecycle controls on order detail) are complete; the US10 order-list filters (All/Current/Past) are the remaining screen task.
+This is the React startup foundation adapted from the StaycationX_Frontend/myReactApp lab. It retains React 18, React Router 6, Bootstrap and Create React App. The shared architecture has landed: seeded-account sign-in at `/login`, the protected diner and vendor persona areas (routes in `src/App.js`), the shared API client, per-tab token state, shared refusal feedback, and the shared request-in-flight control. The diner ordering flow (stalls → menu → cart → checkout → tracking), the diner order list with the US10 All/Current/Past filters (All and Current poll every 3 s; Past is a one-shot terminal-state view), and the vendor trading/fulfillment screens (own menu with open/close and item add/edit/remove, plus the paid order queue and the server-permitted lifecycle controls on order detail) are complete. All persona screens required by the TMA are in place; the remaining assessed work (the assembled report and the narrated screencast) lives in the backend repository.
 
 ## Install and configure
 
-Prerequisites: Node 22.17.0 (in `.nvmrc`), npm 10, and the separate Flask API at `http://127.0.0.1:5001` when the persona flows are implemented.
+Prerequisites: Node 22.17.0 (in `.nvmrc`), npm 10, and the separate Flask API at `http://127.0.0.1:5001` (started and seeded per the backend README) for the persona flows.
 
 ```bash
 nvm install
@@ -31,7 +31,7 @@ Open `http://127.0.0.1:5173`. The local `.env` uses `BROWSER=none`, so startup d
 npm run build
 ```
 
-CRA uses `build/`; this output and node_modules are ignored. The backend will hold the required Playwright test against the running frontend/API. The TMA does not require a frontend unit/component suite, so the lab's test files/scripts are omitted.
+CRA uses `build/`; this output and node_modules are ignored. The required Playwright system test against this running frontend (and the API) lives in the backend repository (`tests/playwright/` — see its README's browser-suite bullet). The TMA does not require a frontend unit/component suite, so the lab's test files/scripts are omitted.
 
 ## Adaptation record
 
