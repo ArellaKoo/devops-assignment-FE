@@ -42,3 +42,9 @@ The lab's original clean install failed because its lockfile did not match the m
 The backend repository contains `docs/report/provenance.md` with per-module explanations and `docs/assessment/setup-guide.md` with workspace setup instructions. The original lab source repositories are unchanged. Add the narrated screencast link here when the actual recording is available.
 
 CRA's proxy configuration also produced an invalid `allowedHosts` option with the selected loopback `HOST`; removing that unused proxy permits local development startup. This foundation keeps the lab build tool and is verified on the pinned runtime. Dependency installation emits deprecation notices from the older CRA dependency tree.
+
+## Report and recording
+
+The [Word report draft](https://github.com/ArellaKoo/devops-assignment-BE/blob/setup/lab-adaptation/docs/report/SkipQ_Report_Draft.docx), [PDF report draft](https://github.com/ArellaKoo/devops-assignment-BE/blob/setup/lab-adaptation/docs/report/SkipQ_Report_Draft.pdf) and [final handover](https://github.com/ArellaKoo/devops-assignment-BE/blob/setup/lab-adaptation/docs/assessment/codex-handover.md) are in the backend repository. These links require the final branch to be published. The narrated recording link remains pending.
+
+Checkout displays transport/server errors and retains its retry key. Menu/cart quantity and removal controls use the shared in-flight guard, preventing overlapping mutations in this tab. The supplementary diagnostic checks for these behaviors live under the backend's `docs/evidence/codex-handover/`; the assessed lifecycle suite still uses the real API with both roles signing in through the UI.
