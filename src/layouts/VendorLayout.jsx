@@ -16,29 +16,31 @@ export default function VendorLayout() {
   const stallName = user.stall && user.stall.name;
 
   return (
-    <div className="container-fluid">
-      <nav className="navbar navbar-expand navbar-dark bg-dark">
-        <div className="container">
+    <div>
+      <nav className="navbar navbar-dark bg-dark" aria-label="Vendor navigation">
+        <div className="container gap-2">
           <span className="navbar-brand mb-0 h1">SkipQ</span>
           <span className="navbar-text me-auto d-none d-md-inline">
             Vendor — {user.email}
             {stallName ? ` (${stallName})` : ''}
           </span>
-          <NavLink className="nav-link" to="/vendor/menu">
-            Menu
-          </NavLink>
-          <NavLink className="nav-link" to="/vendor/orders">
-            Orders
-          </NavLink>
-          <button type="button" className="btn btn-outline-light btn-sm ms-2" onClick={handleLogout}>
-            Sign out
-          </button>
+          <div className="navbar-nav flex-row flex-wrap align-items-center gap-3">
+            <NavLink className="nav-link" to="/vendor/menu">
+              Menu
+            </NavLink>
+            <NavLink className="nav-link" to="/vendor/orders">
+              Orders
+            </NavLink>
+            <button type="button" className="btn btn-outline-light btn-sm ms-2" onClick={handleLogout}>
+              Sign out
+            </button>
+          </div>
         </div>
       </nav>
       <FeedbackBanner />
-      <div className="container py-4">
+      <main className="container py-4">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

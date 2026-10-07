@@ -5,6 +5,7 @@ import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
 import { useAsyncAction } from '../../components/AsyncButton';
+import LoadState from '../../components/LoadState';
 import { formatCents } from '../../format';
 
 // One stall's published menu, active while the diner is on it:
@@ -114,7 +115,7 @@ export default function DinerMenuPage() {
     return (
       <section>
         <h2>Menu</h2>
-        <p className="text-secondary">Loading the menu…</p>
+        <LoadState message={menuErrors.message} loading="Loading the menu…" onRetry={loadMenu} />
       </section>
     );
   }
@@ -136,13 +137,15 @@ export default function DinerMenuPage() {
         </div>
       )}
 
+      {cart === null && <LoadState message={cartErrors.message} loading="Checking your cart…" onRetry={loadCart} />}
+
       {items.length === 0 ? (
         <p className="text-secondary">This stall has no menu items yet.</p>
       ) : (
         <ul className="list-group">
           {items.map((item) => {
             const quantity = quantityFor(item.id);
-            const disabled = cartBusy || !item.is_available || !stall.is_open;
+            const disabled = cartBusy || cart === null || !item.is_available || !stall.is_open;
             return (
               <li key={item.id} className={`list-group-item ${item.is_available ? '' : 'text-secondary'}`}>
                 <div className="d-flex gap-3">
@@ -155,7 +158,7 @@ export default function DinerMenuPage() {
                     />
                   )}
                   <div className="flex-grow-1">
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
                       <strong>{item.name}</strong>
                       {!item.is_available && <span className="badge text-bg-secondary">Sold out</span>}
                     </div>
@@ -168,7 +171,7 @@ export default function DinerMenuPage() {
                         disabled={disabled}
                         onClick={() => addItem(item)}
                       >
-                        {item.is_available ? (quantity > 0 ? `Add another (in cart: ${quantity})` : 'Add') : 'Sold out'}
+                        {cartBusy ? 'Adding…' : item.is_available ? (quantity > 0 ? `Add another (in cart: ${quantity})` : 'Add') : 'Sold out'}
                       </button>
                     </div>
                   </div>

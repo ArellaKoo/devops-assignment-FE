@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import useTransitionError from '../../hooks/useTransitionError';
 import { useAsyncAction } from '../../components/AsyncButton';
+import LoadState from '../../components/LoadState';
 import { formatCents } from '../../format';
 
 // Cart review. The server computes the total and the checkout freshness
@@ -57,7 +58,7 @@ export default function DinerCartPage() {
     return (
       <section>
         <h2>Your cart</h2>
-        <p className="text-secondary">Loading your cart…</p>
+        <LoadState message={errors.message} loading="Loading your cart…" onRetry={load} />
       </section>
     );
   }
@@ -70,6 +71,13 @@ export default function DinerCartPage() {
           Refresh
         </button>
       </div>
+
+      {cart.stall && !cart.stall.is_open && (
+        <div className="alert alert-secondary" role="status">
+          <strong>{cart.stall.name} is currently closed.</strong> You can remove items or return when the stall opens.
+        </div>
+      )}
+      {cartBusy && <p className="text-secondary" role="status">Updating your cart…</p>}
 
       {cart.items.length === 0 ? (
         <div className="text-secondary">
@@ -86,6 +94,7 @@ export default function DinerCartPage() {
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="me-3">
                     <strong>{line.name}</strong>
+                    {!line.is_available && <span className="badge text-bg-secondary ms-2">Sold out</span>}
                     <div className="text-secondary small">{formatCents(line.price_cents)} each</div>
                   </div>
                   <div className="d-flex align-items-center gap-2">
@@ -93,7 +102,7 @@ export default function DinerCartPage() {
                       <button
                         type="button"
                         className="btn btn-outline-primary btn-sm"
-                        disabled={cartBusy}
+                        disabled={cartBusy || !line.is_available || !cart.stall?.is_open}
                         onClick={() => setQuantity(line, line.quantity - 1)}
                         aria-label={`Decrease quantity of ${line.name}`}
                       >
@@ -103,7 +112,7 @@ export default function DinerCartPage() {
                       <button
                         type="button"
                         className="btn btn-outline-primary btn-sm"
-                        disabled={cartBusy}
+                        disabled={cartBusy || !line.is_available || !cart.stall?.is_open}
                         onClick={() => setQuantity(line, line.quantity + 1)}
                         aria-label={`Increase quantity of ${line.name}`}
                       >
@@ -133,13 +142,11 @@ export default function DinerCartPage() {
                 <span>
                   Total: <strong>{formatCents(cart.total_cents)}</strong>
                 </span>
-                <Link to="/diner/checkout" className="btn btn-primary">
+                {!cartBusy && cart.stall?.is_open && cart.items.every((line) => line.is_available) && <Link to="/diner/checkout" className="btn btn-primary">
                   Continue to checkout
-                </Link>
+                </Link>}
               </div>
-              <div className="text-secondary small mt-2">
-                Cart fingerprint (server-computed at checkout): <code>{cart.fingerprint}</code>
-              </div>
+              {cart.items.some((line) => !line.is_available) && <p className="text-warning-emphasis mb-0 mt-2">Remove sold-out items before continuing to checkout.</p>}
             </div>
           </div>
         </>

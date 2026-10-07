@@ -5,11 +5,12 @@ import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
 import { formatCents, formatDateTime } from '../../format';
-import { ACTIVE_STATUSES, statusBadgeClass } from './orderStatus';
+import { statusBadgeClass } from './orderStatus';
+import LoadState from '../../components/LoadState';
 
 // The stall's paid queue (every stored order is paid). Active view: polls
-// every 3 s while any order is still moving (a second account on the shared
-// stall can move one) and stops once every order is terminal; the explicit
+// every 3 s while this queue is mounted, even when empty or all terminal,
+// so newly paid orders appear without a manual refresh; the explicit
 // Refresh always works. The queue stays fully accessible after closure.
 export default function VendorOrdersPage() {
   const { request } = useAuth();
@@ -38,11 +39,7 @@ export default function VendorOrdersPage() {
     }
   }, [request]);
 
-  usePolling(
-    load,
-    3000,
-    orders === null || orders.some((order) => ACTIVE_STATUSES.includes(order.status)),
-  );
+  usePolling(load, 3000);
 
   useEffect(() => {
     loadStall();
@@ -65,7 +62,7 @@ export default function VendorOrdersPage() {
       )}
 
       {orders === null ? (
-        <p className="text-secondary">Loading your orders…</p>
+        <LoadState message={errors.message} loading="Loading your orders…" onRetry={load} />
       ) : orders.length === 0 ? (
         <p className="text-secondary">No paid orders for this stall yet.</p>
       ) : (

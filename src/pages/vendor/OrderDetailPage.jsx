@@ -4,6 +4,8 @@ import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
+import { useAsyncAction } from '../../components/AsyncButton';
+import LoadState from '../../components/LoadState';
 import { formatCents, formatDateTime } from '../../format';
 import { ACTIVE_STATUSES, statusBadgeClass } from './orderStatus';
 
@@ -40,7 +42,6 @@ export default function VendorOrderDetailPage() {
   const { show } = useFeedback();
   const [order, setOrder] = useState(null);
   const [errorInfo, setErrorInfo] = useState(null);
-  const [busy, setBusy] = useState(false);
   const errors = useTransitionError(show);
 
   const load = useCallback(async () => {
@@ -58,7 +59,27 @@ export default function VendorOrderDetailPage() {
     }
   }, [request, orderId, errors]);
 
-  usePolling(load, 3000, order === null || ACTIVE_STATUSES.includes(order.status));
+  usePolling(load, 3000, errorInfo === null && (order === null || ACTIVE_STATUSES.includes(order.status)), orderId);
+
+  const { busy, run: transition } = useAsyncAction(async (target) => {
+    if (target === 'Cancelled' && !window.confirm('Reject this order? The diner’s payment will be refunded.')) {
+      return;
+    }
+    if (target === 'NoShow' && !window.confirm('Mark this order as a no-show? The diner’s payment stays paid.')) {
+      return;
+    }
+    try {
+      const data = await request(`/api/vendor/orders/${orderId}/status`, {
+        method: 'PATCH',
+        body: { status: target },
+      });
+      setOrder(data.order);
+      show(SUCCESS_NOTICES[target], 'success');
+    } catch (error) {
+      show(error.message);
+      await load();
+    }
+  });
 
   if (errorInfo !== null) {
     return (
@@ -76,34 +97,10 @@ export default function VendorOrderDetailPage() {
     return (
       <section>
         <h2>Order</h2>
-        <p className="text-secondary">Loading the order…</p>
+        <LoadState message={errors.message} loading="Loading the order…" onRetry={load} />
       </section>
     );
   }
-
-  const transition = async (target) => {
-    if (busy) return;
-    if (target === 'Cancelled' && !window.confirm('Reject this order? The diner’s payment will be refunded.')) {
-      return;
-    }
-    if (target === 'NoShow' && !window.confirm('Mark this order as a no-show? The diner’s payment stays paid.')) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const data = await request(`/api/vendor/orders/${orderId}/status`, {
-        method: 'PATCH',
-        body: { status: target },
-      });
-      setOrder(data.order);
-      show(SUCCESS_NOTICES[target], 'success');
-    } catch (error) {
-      show(error.message);
-      load();
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const payment = order.payment;
 
@@ -161,6 +158,9 @@ export default function VendorOrderDetailPage() {
         {payment.refunded_at ? ` · refunded ${formatDateTime(payment.refunded_at)}` : ''}
       </p>
 
+      {order.status === 'Ready' && <p className="text-secondary small">A no-show can be marked 30 minutes after the ready time. The order can still be collected.</p>}
+      {busy && <p className="text-secondary" role="status">Updating the order…</p>}
+
       {order.allowed_actions.length > 0 ? (
         <div className="d-flex gap-2 flex-wrap">
           {order.allowed_actions.map((target) => (
@@ -168,7 +168,7 @@ export default function VendorOrderDetailPage() {
               key={target}
               type="button"
               className={`btn ${ACTION_CLASSES[target]}`}
-              disabled={busy}
+              disabled={busy || Boolean(errors.message)}
               onClick={() => transition(target)}
             >
               {ACTION_LABELS[target]}

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import { formatCents, formatDateTime } from '../../format';
+import { useAsyncAction } from '../../components/AsyncButton';
+import LoadState from '../../components/LoadState';
 
 // The vendor's trading screen: the own-stall menu with the open/close switch,
 // per-item sold-out toggles, and edit/remove links. The vendor is this
@@ -13,13 +15,16 @@ export default function VendorMenuPage() {
   const { show } = useFeedback();
   const [data, setData] = useState(null);
   const [busyKey, setBusyKey] = useState(null);
+  const [loadError, setLoadError] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const payload = await request('/api/vendor/menu');
       setData(payload);
+      setLoadError(null);
     } catch (error) {
       setData(null);
+      setLoadError(error.message);
       show(error.message);
     }
   }, [request, show]);
@@ -101,17 +106,18 @@ export default function VendorMenuPage() {
     }
   };
 
+  const { busy: anyBusy, run: mutate } = useAsyncAction(async (action, ...args) => action(...args));
+
   if (data === null) {
     return (
       <section>
         <h2>Menu</h2>
-        <p className="text-secondary">Loading your menu…</p>
+        <LoadState message={loadError} loading="Loading your menu…" onRetry={load} />
       </section>
     );
   }
 
   const { stall, items } = data;
-  const anyBusy = busyKey !== null;
 
   return (
     <section>
@@ -132,6 +138,8 @@ export default function VendorMenuPage() {
         </div>
       </div>
 
+      {anyBusy && <p className="text-secondary" role="status">Updating your menu…</p>}
+
       <div className="form-check form-switch fs-6 mb-3">
         <input
           type="checkbox"
@@ -140,7 +148,7 @@ export default function VendorMenuPage() {
           className="form-check-input"
           checked={stall.is_open}
           disabled={anyBusy}
-          onChange={toggleStall}
+          onChange={() => mutate(toggleStall)}
         />
         <label className="form-check-label" htmlFor="stall-trading-switch">
           Trading state — {stall.is_open ? 'open; diners can order here' : 'closed; diners cannot order here'}
@@ -173,7 +181,7 @@ export default function VendorMenuPage() {
                   />
                 )}
                 <div className="flex-grow-1">
-                  <div className="d-flex align-items-center gap-2">
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
                     <strong>{item.name}</strong>
                     {!item.is_available && <span className="badge text-bg-secondary">Sold out</span>}
                     <span className="text-secondary small ms-auto">
@@ -186,7 +194,7 @@ export default function VendorMenuPage() {
                       type="button"
                       className="btn btn-outline-secondary btn-sm"
                       disabled={anyBusy}
-                      onClick={() => toggleAvailability(item)}
+                      onClick={() => mutate(toggleAvailability, item)}
                     >
                       {item.is_available ? 'Mark sold out' : 'Restock'}
                     </button>
@@ -197,7 +205,7 @@ export default function VendorMenuPage() {
                       type="button"
                       className="btn btn-outline-danger btn-sm"
                       disabled={anyBusy}
-                      onClick={() => removeItem(item)}
+                      onClick={() => mutate(removeItem, item)}
                     >
                       Remove
                     </button>

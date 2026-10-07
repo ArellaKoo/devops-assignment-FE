@@ -5,6 +5,7 @@ import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
 import { formatCents, formatDateTime } from '../../format';
+import LoadState from '../../components/LoadState';
 
 // The diner's Order List (US10): All/Current/Past over the server's
 // view=all|current|history — UI Past maps to view=history. All and Current
@@ -80,7 +81,7 @@ export default function DinerOrdersPage() {
       </div>
 
       {orders === null ? (
-        <p className="text-secondary">Loading your orders…</p>
+        <LoadState message={errors.message} loading="Loading your orders…" onRetry={load} />
       ) : orders.length === 0 ? (
         view === 'all' ? (
           <div className="text-secondary">

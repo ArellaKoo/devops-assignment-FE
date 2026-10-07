@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import AsyncButton from '../components/AsyncButton';
+import AsyncButton, { useAsyncAction } from '../components/AsyncButton';
 import FeedbackBanner from '../components/FeedbackBanner';
 import { useFeedback } from '../context/FeedbackContext';
 
@@ -19,17 +19,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('diner.one@skipq.test');
   const [password, setPassword] = useState('');
 
-  if (isAuthenticated) {
-    return <Navigate to={ROLE_HOME[user.role] || '/login'} replace />;
-  }
-
-  const handleSignin = async (event) => {
-    event.preventDefault();
+  const { busy, run: signIn } = useAsyncAction(async () => {
     try {
       const nextUser = await login(email.trim(), password);
       const from = location.state && location.state.from;
       // Only honour a return path that matches the persona that signed in.
-      if (from && ROLE_HOME[nextUser.role] === from.slice(0, ROLE_HOME[nextUser.role].length)) {
+      if (typeof from === 'string' && from.startsWith(`/${nextUser.role}/`)) {
         navigate(from, { replace: true });
       } else {
         navigate(ROLE_HOME[nextUser.role] || '/login', { replace: true });
@@ -37,7 +32,14 @@ export default function LoginPage() {
     } catch (error) {
       show(error instanceof ApiError ? error.message : 'Sign-in failed. Please try again.');
     }
-  };
+  });
+
+  if (isAuthenticated) {
+    const from = location.state && location.state.from;
+    const destination = typeof from === 'string' && from.startsWith(`/${user.role}/`)
+      ? from : ROLE_HOME[user.role] || '/login';
+    return <Navigate to={destination} replace />;
+  }
 
   return (
     <div className="container py-5">
@@ -45,7 +47,7 @@ export default function LoginPage() {
         <div className="col-md-6 col-lg-5">
           <h1 className="h3 mb-3 text-center">SkipQ sign-in</h1>
           <FeedbackBanner />
-          <form onSubmit={handleSignin} className="card">
+          <form onSubmit={(event) => { event.preventDefault(); signIn(); }} className="card">
             <div className="card-body">
               <div className="mb-3">
                 <label className="form-label" htmlFor="email">
@@ -59,6 +61,7 @@ export default function LoginPage() {
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
                   required
+                  disabled={busy}
                 />
               </div>
               <div className="mb-3">
@@ -73,9 +76,10 @@ export default function LoginPage() {
                   onChange={(event) => setPassword(event.target.value)}
                   autoComplete="current-password"
                   required
+                  disabled={busy}
                 />
               </div>
-              <AsyncButton type="submit" label="Sign in" busyLabel="Signing in…" className="w-100" />
+              <AsyncButton type="submit" label="Sign in" busyLabel="Signing in…" busy={busy} className="btn btn-primary w-100" />
             </div>
           </form>
           <div className="card mt-3 border-light bg-light">

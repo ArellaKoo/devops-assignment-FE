@@ -5,6 +5,7 @@ import { useFeedback } from '../../context/FeedbackContext';
 import usePolling from '../../hooks/usePolling';
 import useTransitionError from '../../hooks/useTransitionError';
 import { formatCents, formatDateTime } from '../../format';
+import LoadState from '../../components/LoadState';
 
 const ACTIVE_STATUSES = ['Pending', 'Preparing', 'Ready'];
 
@@ -27,7 +28,7 @@ export default function DinerOrderDetailPage() {
       setNotFound(false);
       errors.markOk();
     } catch (error) {
-      if (error.status === 404) {
+      if (error.status === 404 || error.status === 403) {
         setNotFound(true);
         setOrder(null);
       }
@@ -37,7 +38,7 @@ export default function DinerOrderDetailPage() {
 
   // Poll while the order is unknown (first load) or in an active state; stop
   // on a terminal state so a Collected/Cancelled/NoShow order never refreshes.
-  usePolling(load, 3000, order === null || ACTIVE_STATUSES.includes(order.status));
+  usePolling(load, 3000, !notFound && (order === null || ACTIVE_STATUSES.includes(order.status)), orderId);
 
   if (notFound) {
     return (
@@ -55,7 +56,7 @@ export default function DinerOrderDetailPage() {
     return (
       <section>
         <h2>Order</h2>
-        <p className="text-secondary">Loading the order…</p>
+        <LoadState message={errors.message} loading="Loading the order…" onRetry={load} />
       </section>
     );
   }

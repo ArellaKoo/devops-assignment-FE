@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
+import LoadState from '../../components/LoadState';
 
 // Open-stall browser. The list loads on entry and on the explicit Refresh;
 // it does not poll (the menu and order views are the active ones).
@@ -9,13 +10,16 @@ export default function DinerStallsPage() {
   const { request } = useAuth();
   const { show } = useFeedback();
   const [stalls, setStalls] = useState(null);
+  const [loadError, setLoadError] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const data = await request('/api/diner/stalls');
       setStalls(data.items);
+      setLoadError(null);
     } catch (error) {
       setStalls(null);
+      setLoadError(error.message);
       show(error.message);
     }
   }, [request, show]);
@@ -35,7 +39,7 @@ export default function DinerStallsPage() {
         </button>
       </div>
       {stalls === null ? (
-        <p className="text-secondary">Loading stalls…</p>
+        <LoadState message={loadError} loading="Loading stalls…" onRetry={load} />
       ) : stalls.length === 0 ? (
         <p className="text-secondary">No stalls are open right now.</p>
       ) : (

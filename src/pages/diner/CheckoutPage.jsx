@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useFeedback } from '../../context/FeedbackContext';
 import AsyncButton from '../../components/AsyncButton';
+import LoadState from '../../components/LoadState';
 import useTransitionError from '../../hooks/useTransitionError';
 import { formatCents } from '../../format';
 
@@ -119,7 +120,7 @@ export default function DinerCheckoutPage() {
     return (
       <section>
         <h2>Checkout</h2>
-        <p className="text-secondary">Loading your cart…</p>
+        <LoadState message={errors.message} loading="Loading your cart…" onRetry={loadCart} />
       </section>
     );
   }
@@ -147,8 +148,7 @@ export default function DinerCheckoutPage() {
           {lastFailure.message}
         </div>
         <p className="text-secondary small">
-          Your checkout key is retained for this attempt; reviewing or refreshing the cart will re-send the server's
-          current fingerprint.
+          Review the updated cart before trying again.
         </p>
         <div className="d-flex gap-2">
           <Link className="btn btn-primary" to="/diner/cart">
@@ -166,17 +166,23 @@ export default function DinerCheckoutPage() {
     <section>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="mb-0">Checkout</h2>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={loadCart}>
+        <button type="button" className="btn btn-outline-secondary btn-sm" disabled={placing} onClick={loadCart}>
           Refresh
         </button>
       </div>
 
+      {cart.stall && !cart.stall.is_open && (
+        <div className="alert alert-secondary" role="status">
+          <strong>{cart.stall.name} is currently closed.</strong> Return when the stall opens or edit your cart.
+        </div>
+      )}
       <div className="card mb-3">
         <div className="card-body py-2">
           {cart.items.map((line) => (
             <div key={line.item_id} className="d-flex justify-content-between">
               <span>
                 {line.quantity} × {line.name}
+                {!line.is_available && <span className="badge text-bg-secondary ms-2">Sold out</span>}
               </span>
               <span>{formatCents(line.line_cents)}</span>
             </div>
@@ -186,19 +192,17 @@ export default function DinerCheckoutPage() {
             <span>
               Total: <strong>{formatCents(cart.total_cents)}</strong>
             </span>
-            <Link className="btn btn-link btn-sm p-0" to="/diner/cart">
+            {!placing && <Link className="btn btn-link btn-sm p-0" to="/diner/cart">
               Edit cart
-            </Link>
+            </Link>}
           </div>
-          <div className="text-secondary small mt-1">
-            Cart fingerprint: <code>{cart.fingerprint}</code>
-          </div>
+          {cart.items.some((line) => !line.is_available) && <p className="text-warning-emphasis mb-0 mt-2">Remove sold-out items from your cart before paying.</p>}
         </div>
       </div>
 
       {lastFailure && lastFailure.code === 'payment_failed' && (
         <div className="alert alert-danger" role="alert">
-          {lastFailure.message} The same checkout key is retained — retrying will not create a duplicate order.
+          {lastFailure.message} You can retry this payment safely.
         </div>
       )}
       {lastFailure && lastFailure.code === 'checkout_key_conflict' && (
@@ -224,6 +228,7 @@ export default function DinerCheckoutPage() {
                   id={`pay-${method}`}
                   name="payment-method"
                   checked={paymentMethod === method}
+                  disabled={placing}
                   onChange={() => setPaymentMethod(method)}
                 />
                 <label className="form-check-label" htmlFor={`pay-${method}`}>
@@ -238,6 +243,7 @@ export default function DinerCheckoutPage() {
               type="checkbox"
               id="simulate-failure"
               checked={simulateFailure}
+              disabled={placing}
               onChange={(event) => setSimulateFailure(event.target.checked)}
             />
             <label className="form-check-label text-secondary small" htmlFor="simulate-failure">
@@ -248,8 +254,8 @@ export default function DinerCheckoutPage() {
             label={`Pay ${formatCents(cart.total_cents)}`}
             busyLabel="Processing payment…"
             onClick={placeOrder}
-            disabled={placing}
-            className="w-100"
+            disabled={placing || !cart.stall?.is_open || cart.items.some((line) => !line.is_available)}
+            className="btn btn-primary w-100"
           />
         </div>
       </div>
